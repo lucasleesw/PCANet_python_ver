@@ -3,11 +3,15 @@ import struct
 import numpy as np
 import pickle
 
-def load_mnist():
+def load_mnist(root):
     """Load MNIST data from `path`"""
-    labels_path = "data/MNIST/train-labels-idx1-ubyte"
+    labels_path = os.path.join(root, "train-labels-idx1-ubyte")
 
-    images_path = "data/MNIST/train-images-idx3-ubyte"
+    images_path = os.path.join(root, "train-images-idx3-ubyte")
+
+    test_label_path = os.path.join(root,"t10k-labels-idx1-ubyte")
+
+    test_images_path = os.path.join(root,"t10k-images-idx3-ubyte")
 
     with open(labels_path, 'rb') as lbpath:
         magic, n = struct.unpack('>II', lbpath.read(8))
@@ -17,18 +21,17 @@ def load_mnist():
     with open(images_path, 'rb') as imgpath:
         magic, num, rows, cols = struct.unpack('>IIII', imgpath.read(16))
         images = np.fromfile(imgpath, dtype=np.uint8).reshape(len(labels), 28, 28)
-    return images, labels
 
+    with open(test_label_path, 'rb') as tlbpath:
+        magic, n = struct.unpack('>II', tlbpath.read(8))
+        tlabels = np.fromfile(tlbpath, dtype=np.uint8)
+    # 读入magic是一个文件协议的描述,也是调用fromfile 方法将字节读入NumPy的array之前在文件缓冲中的item数(n).
 
-# image, label = load_mnist()
-# print(image[0], label[0])
+    with open(test_images_path, 'rb') as timgpath:
+        magic, num, rows, cols = struct.unpack('>IIII', timgpath.read(16))
+        timages = np.fromfile(timgpath, dtype=np.uint8).reshape(len(tlabels), 28, 28)
+    return images, labels, timages, tlabels
 
-
-def unpickle(file):
-
-    with open(file, 'rb') as fo:
-        dict = pickle.load(fo, encoding='bytes')
-    return dict
 
 
 def load_CIFAR_batch(filename):
@@ -49,7 +52,7 @@ def load_CIFAR10(ROOT):
     for b in range(1, 6):
         f = os.path.join(ROOT, 'data_batch_%d' % (b,))
         X, Y = load_CIFAR_batch(f)
-        xs.append(X)         #将所有batch整合起来
+        xs.append(X)
         ys.append(Y)
     Xtr = np.concatenate(xs) # 使变成行向量,最终Xtr的尺寸为(50000,32,32,3)
     Ytr = np.concatenate(ys)

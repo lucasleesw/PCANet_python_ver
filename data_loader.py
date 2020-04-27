@@ -16,9 +16,9 @@ def load_mnist(root):
 
     images_path = os.path.join(root, "train-images-idx3-ubyte")
 
-    test_label_path = os.path.join(root,"t10k-labels-idx1-ubyte")
+    test_label_path = os.path.join(root, "t10k-labels-idx1-ubyte")
 
-    test_images_path = os.path.join(root,"t10k-images-idx3-ubyte")
+    test_images_path = os.path.join(root, "t10k-images-idx3-ubyte")
 
     with open(labels_path, 'rb') as lbpath:
         magic, n = struct.unpack('>II', lbpath.read(8))

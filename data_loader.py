@@ -11,7 +11,7 @@ import numpy as np
 import pickle
 
 def load_mnist(root):
-    """Load MNIST data from `path`"""
+    """Load MNIST data from `root`"""
     labels_path = os.path.join(root, "train-labels-idx1-ubyte")
 
     images_path = os.path.join(root, "train-images-idx3-ubyte")
@@ -42,7 +42,7 @@ def load_mnist(root):
 
 
 def load_CIFAR_batch(filename):
-    """ 载入cifar数据集的一个batch """
+
     with open(filename, 'rb') as f:
         datadict = pickle.load(f, encoding='bytes')
         X = datadict[b'data']
@@ -53,7 +53,7 @@ def load_CIFAR_batch(filename):
 
 
 def load_CIFAR10(ROOT):
-    """ 载入cifar全部数据 """
+    """Load CIFAR10 data from `root`"""
     xs = []
     ys = []
     for b in range(1, 6):
@@ -61,7 +61,7 @@ def load_CIFAR10(ROOT):
         X, Y = load_CIFAR_batch(f)
         xs.append(X)
         ys.append(Y)
-    Xtr = np.concatenate(xs) # 使变成行向量,最终Xtr的尺寸为(50000,32,32,3)
+    Xtr = np.concatenate(xs)
     Ytr = np.concatenate(ys)
     del X, Y
     Xte, Yte = load_CIFAR_batch(os.path.join(ROOT, 'test_batch'))

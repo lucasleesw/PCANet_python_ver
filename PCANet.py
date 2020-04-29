@@ -57,6 +57,7 @@ class PCANet:
         return filters
 
     def get_historgram(self, decimal_result):
+        ''' Useless! '''
         histo_bins = range(2 ** self.L2)
         img_width, img_height = decimal_result.shape[1], decimal_result.shape[2]
         step_size = int(self.block_size * (1 - self.overlapping_radio))
@@ -68,7 +69,7 @@ class PCANet:
                 for j in range(0, img_patch_height, step_size):
                     patten = decimal_result[i: i + self.block_size, j:j + self.block_size]
                     histogram, _ = np.histogram(patten, histo_bins)
-                    print(histogram)
+
 
     def extract_features(self, img):
         conv_result = np.empty((self.L1, self.L2, img.shape[0], img.shape[1]))
@@ -82,8 +83,6 @@ class PCANet:
         decimal_result = np.zeros((self.L1, img.shape[0], img.shape[1]))
         for i in range(len(self.l2_filters)):
             decimal_result += (2 ** i) * binary_result[:, i, :, :]
-        # print(decimal_result[0])
-        # self.get_historgram(decimal_result)
 
         histo_bins = range(2 ** self.L2 + 1)
         img_width, img_height = decimal_result.shape[1], decimal_result.shape[2]

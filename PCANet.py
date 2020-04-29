@@ -2,6 +2,10 @@
 import numpy as np
 from scipy import signal
 import gc
+import copy
+
+
+from guppy import hpy; h=hpy()
 
 class PCANet:
     def __init__(self, k1, k2, L1, L2, block_size, overlapping_radio=0):
@@ -16,12 +20,14 @@ class PCANet:
         self.l2_filters = None
 
     def mean_remove_img_patches(self, img, width, height):
+        in_img = copy.deepcopy(img)
+        del img
         cap_x_i = np.empty((self.k1 * self.k2, width * height))
         idx = 0
         for i in range(width):
             for j in range(height):
-                patten = img[i: i+self.k1, j:j+self.k2].flatten()
-                cap_x_i[:, idx] = patten
+                patten = in_img[i: i + self.k1, j:j + self.k2].copy()
+                cap_x_i[:, idx] = patten.flatten()
                 idx += 1
         cap_x_i -= np.mean(cap_x_i, axis=0)
         return cap_x_i
@@ -32,30 +38,78 @@ class PCANet:
         patch_width = self.k1
         patch_height = self.k2
         img_patch_height = img_height - patch_height + 1
-        img_patch_width = img_width-patch_width+1
-        img_len = img_patch_height * img_patch_width
-        cap_x = np.empty((patch_width * patch_height, img_len * img_num))
-        # print(cap_x.shape)
+        img_patch_width = img_width - patch_width + 1
+        cap_c = np.zeros((patch_width * patch_height, patch_width * patch_height))
 
         for n in range(img_num):
-            cap_x[:, n*img_len:(n+1)*img_len] = self.mean_remove_img_patches(train_data[n], img_patch_width, img_patch_height)
-            # print(cap_x_i.shape)
-            if n % 100 == 0:
-                gc.collect()
+            im = self.mean_remove_img_patches(train_data[n], img_patch_width, img_patch_height)
+            cap_c += np.matmul(im, im.T)
 
-        vals, vecs = np.linalg.eig(np.matmul(cap_x, cap_x.T)/cap_x.shape[0])
+            if n % 1000 == 0:
+                print(n)
+                gc.collect()
+        print(h.heap())
+        vals, vecs = np.linalg.eig(cap_c / img_num * im.shape[1])
         idx_w_l1 = np.argsort(vals)[:-(num_filter + 1):-1]
         cap_w_l1 = vecs[:, idx_w_l1]
         filters = cap_w_l1.T.reshape(num_filter, patch_width, patch_height)
 
         return filters
 
+    def get_historgram(self, decimal_result):
+        histo_bins = range(2 ** self.L2)
+        img_width, img_height = decimal_result.shape[1], decimal_result.shape[2]
+        step_size = int(self.block_size * (1 - self.overlapping_radio))
+        img_patch_height = img_height - self.block_size + 1
+        img_patch_width = img_width - self.block_size + 1
+
+        for l in range(self.L1):
+            for i in range(0, img_patch_width, step_size):
+                for j in range(0, img_patch_height, step_size):
+                    patten = decimal_result[i: i + self.block_size, j:j + self.block_size]
+                    histogram, _ = np.histogram(patten, histo_bins)
+                    print(histogram)
+
+    def extract_features(self, img):
+        conv_result = np.empty((self.L1, self.L2, img.shape[0], img.shape[1]))
+        for i in range(len(self.l1_filters)):
+            l1_result = signal.convolve2d(img, self.l1_filters[i], 'same')
+            for j in range(len(self.l2_filters)):
+                conv_result[i, j, :, :] = signal.convolve2d(l1_result, self.l2_filters[j], 'same')
+        # print(conv_result.shape)
+        binary_result = np.where(conv_result > 0, 1, 0)
+        # print(binary_result.shape)
+        decimal_result = np.zeros((self.L1, img.shape[0], img.shape[1]))
+        for i in range(len(self.l2_filters)):
+            decimal_result += (2 ** i) * binary_result[:, i, :, :]
+        # print(decimal_result[0])
+        # self.get_historgram(decimal_result)
+
+        histo_bins = range(2 ** self.L2 + 1)
+        img_width, img_height = decimal_result.shape[1], decimal_result.shape[2]
+        step_size = int(self.block_size * (1 - self.overlapping_radio))
+        img_patch_height = img_height - self.block_size + 1
+        img_patch_width = img_width - self.block_size + 1
+
+        feature = []
+
+        for l in range(self.L1):
+            for i in range(0, img_patch_width, step_size):
+                for j in range(0, img_patch_height, step_size):
+                    patten = decimal_result[l, i: i + self.block_size, j:j + self.block_size]
+                    # print(patten.shape)
+                    histogram, _ = np.histogram(patten, histo_bins)
+                    feature.append(histogram)
+        return np.array(feature).reshape((-1, 1))
+
     def fit(self, train_data):
         self.l1_filters = self.get_filter(train_data, self.L1)
         print(self.l1_filters.shape)
         # print(train_data.shape)
-        l1_conv_result = np.empty((train_data.shape[0]*self.l1_filters.shape[0], train_data.shape[1], train_data.shape[2]))
+        l1_conv_result = np.empty(
+            (train_data.shape[0] * self.l1_filters.shape[0], train_data.shape[1], train_data.shape[2]))
         l1_conv_idx = 0
+        # print(h.heap())
         for image in train_data:
             for kernel in self.l1_filters:
                 l1_conv_result[l1_conv_idx, :, :] = signal.convolve2d(image, kernel, 'same')
@@ -64,3 +118,13 @@ class PCANet:
         self.l2_filters = self.get_filter(l1_conv_result, self.L2)
         print(self.l2_filters.shape)
 
+        features = []
+        for i in range(len(train_data)):
+            if i % 1000 == 0:
+                print(i, 'th feature')
+                gc.collect()
+                print(h.heap())
+            feature = self.extract_features(train_data[i])
+            features.append(feature)
+        print(h.heap())
+        print(len(features))

@@ -8,7 +8,7 @@ import sys
 
 
 train_images, train_labels, test_images, test_labels = load_mnist('data/MNIST')
-test_train = train_images[:10, :, :]
+test_train = train_images[:10000, :, :]
 print(test_train.shape)
-net = PCANet(k1=7, k2=7, L1=8, L2=8, block_size=7)
+net = PCANet(k1=7, k2=7, L1=8, L2=8, block_size=7, overlapping_radio=0)
 net.fit(test_train)

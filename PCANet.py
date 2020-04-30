@@ -3,12 +3,12 @@ import numpy as np
 from scipy import signal
 import gc
 import copy
-
+from sklearn import svm
 
 from guppy import hpy; h=hpy()
 
 class PCANet:
-    def __init__(self, k1, k2, L1, L2, block_size, overlapping_radio=0):
+    def __init__(self, k1, k2, L1, L2, block_size, overlapping_radio=0, linear_classifier='svm'):
         # some parameter
         self.k1 = k1
         self.k2 = k2
@@ -18,6 +18,10 @@ class PCANet:
         self.overlapping_radio = overlapping_radio
         self.l1_filters = None
         self.l2_filters = None
+        if linear_classifier == 'svm':
+            self.classifier = svm.SVC()
+        else:
+            self.classifier = None
 
     def mean_remove_img_patches(self, img, width, height):
         in_img = copy.deepcopy(img)
@@ -46,9 +50,9 @@ class PCANet:
             cap_c += np.matmul(im, im.T)
 
             if n % 1000 == 0:
-                print(n)
+                # print(n)
                 gc.collect()
-        print(h.heap())
+        # print(h.heap())
         vals, vecs = np.linalg.eig(cap_c / img_num * im.shape[1])
         idx_w_l1 = np.argsort(vals)[:-(num_filter + 1):-1]
         cap_w_l1 = vecs[:, idx_w_l1]
@@ -99,9 +103,9 @@ class PCANet:
                     # print(patten.shape)
                     histogram, _ = np.histogram(patten, histo_bins)
                     feature.append(histogram)
-        return np.array(feature).reshape((-1, 1))
+        return np.array(feature).reshape((-1))
 
-    def fit(self, train_data):
+    def fit(self, train_data, train_labels):
         self.l1_filters = self.get_filter(train_data, self.L1)
         print(self.l1_filters.shape)
         # print(train_data.shape)
@@ -122,8 +126,18 @@ class PCANet:
             if i % 1000 == 0:
                 print(i, 'th feature')
                 gc.collect()
-                print(h.heap())
+                # print(h.heap())
             feature = self.extract_features(train_data[i])
             features.append(feature)
-        print(h.heap())
-        print(len(features))
+        # print(h.heap())
+        # print(len(features))
+        # print(features[1].shape)
+        self.classifier.fit(features, train_labels)
+        print(self.classifier.get_params())
+
+    def predict(self, test_data):
+        test_features = []
+        for img in test_data:
+            test_features.append(self.extract_features(img))
+        predictions = self.classifier.predict(test_features)
+        return predictions

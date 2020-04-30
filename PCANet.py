@@ -5,7 +5,7 @@ import gc
 import copy
 from sklearn import svm
 
-from guppy import hpy; h=hpy()
+# from guppy import hpy; h=hpy()
 
 class PCANet:
     def __init__(self, k1, k2, L1, L2, block_size, overlapping_radio=0, linear_classifier='svm'):
@@ -49,8 +49,8 @@ class PCANet:
             im = self.mean_remove_img_patches(train_data[n], img_patch_width, img_patch_height)
             cap_c += np.matmul(im, im.T)
 
-            if n % 1000 == 0:
-                # print(n)
+            if n % 10000 == 0:
+                print(n,'th picture')
                 gc.collect()
         # print(h.heap())
         vals, vecs = np.linalg.eig(cap_c / img_num * im.shape[1])
@@ -123,7 +123,7 @@ class PCANet:
 
         features = []
         for i in range(len(train_data)):
-            if i % 1000 == 0:
+            if i % 5000 == 0:
                 print(i, 'th feature')
                 gc.collect()
                 # print(h.heap())
@@ -133,7 +133,7 @@ class PCANet:
         # print(len(features))
         # print(features[1].shape)
         self.classifier.fit(features, train_labels)
-        print(self.classifier.get_params())
+        # print(self.classifier.get_params())
 
     def predict(self, test_data):
         test_features = []

@@ -138,7 +138,8 @@ class PCANet:
 
     def predict(self, test_data):
         test_features = []
-        for img in test_data:
-            test_features.append(self.extract_features(img))
+        for i in range(len(test_data)):
+            print('predicting', i, 'th label')
+            test_features.append(self.extract_features(test_data[i]))
         predictions = self.classifier.predict(test_features)
         return predictions

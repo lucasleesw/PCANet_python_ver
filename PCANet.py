@@ -50,7 +50,7 @@ class PCANet:
             cap_c += np.matmul(im, im.T)
 
             if n % 10000 == 0:
-                print(n,'th picture')
+                print(n, 'th picture')
                 gc.collect()
         # print(h.heap())
         vals, vecs = np.linalg.eig(cap_c / img_num * im.shape[1])
@@ -61,7 +61,7 @@ class PCANet:
         return filters
 
     def get_historgram(self, decimal_result):
-        ''' Useless! '''
+        """ Useless! """
         histo_bins = range(2 ** self.L2)
         img_width, img_height = decimal_result.shape[1], decimal_result.shape[2]
         step_size = int(self.block_size * (1 - self.overlapping_radio))

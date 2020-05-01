@@ -132,6 +132,7 @@ class PCANet:
         # print(h.heap())
         # print(len(features))
         # print(features[1].shape)
+        print('features extracted, SVM begins')
         self.classifier.fit(features, train_labels)
         # print(self.classifier.get_params())
 

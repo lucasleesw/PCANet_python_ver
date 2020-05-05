@@ -138,9 +138,10 @@ class PCANet:
             num_chr = train_data.shape[3]
         else:
             rgb = False
-
+        print('=' * 20)
+        print('calculating L1_stage filters')
         self.l1_filters = self.get_filter(train_data, self.L1, rgb)
-        print(self.l1_filters.shape)
+        print('shape of L1_stage filters:', self.l1_filters.shape)
         # print(train_data.shape)
         if rgb:
             l1_conv_result = np.empty(
@@ -160,29 +161,40 @@ class PCANet:
                 l1_conv_idx += 1
         if rgb:
             l1_conv_result = np.sum(l1_conv_result, axis=-1)
-        print(l1_conv_result.shape)
-        self.l2_filters = self.get_filter(l1_conv_result, self.L2)
-        print(self.l2_filters.shape)
+        print('shape of L1 stage convolution results:', l1_conv_result.shape)
 
+        print('=' * 20)
+        print('calculating L2_stage filters')
+
+        self.l2_filters = self.get_filter(l1_conv_result, self.L2)
+        print('shape of L2_stage filters:', self.l2_filters.shape)
+
+        print('=' * 20)
         features = []
         for i in range(len(train_data)):
             if i % 5000 == 0:
-                print(i, 'th feature')
+                print('extracting', i, 'th feature')
                 gc.collect()
                 # print(h.heap())
             feature = self.extract_features(train_data[i], rgb)
             features.append(feature)
         # print(h.heap())
-        # print(len(features))
+        print('length of feature:', len(features[0]))
+        print('='*20)
         print('features extracted, SVM begins')
         self.classifier.fit(features, train_labels)
         # print(self.classifier.get_params())
 
     def predict(self, test_data):
+        if len(test_data.shape) == 4:
+            rgb = True
+        else:
+            rgb = False
         test_features = []
+        print('=' * 20)
         for i in range(len(test_data)):
             if i % 500 == 0:
                 print('predicting', i, 'th label')
-            test_features.append(self.extract_features(test_data[i]))
+            test_features.append(self.extract_features(test_data[i], rgb))
         predictions = self.classifier.predict(test_features)
         return predictions

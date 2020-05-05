@@ -12,11 +12,17 @@ test_train = (cifar_train[:10, :, :, :], cifar_train_labels[:10])
 # test_train = (train_images[:10, :, :], train_labels[:10])
 
 
-print(test_train[0].shape, test_train[1].shape)
 # net = PCANet(k1=7, k2=7, L1=8, L2=8, block_size=7, overlapping_radio=0)
-net = PCANet(k1=5, k2=5, L1=40, L2=8, block_size=8, overlapping_radio=0)
-net.fit(*test_train)
 
 # test_predict = test_images[:10, :, :]
 # prediction = net.predict(test_predict)
 # print(accuracy_score(test_labels[:10], prediction))
+
+
+
+print(test_train[0].shape, test_train[1].shape)
+net = PCANet(k1=5, k2=5, L1=40, L2=8, block_size=8, overlapping_radio=0)
+net.fit(*test_train)
+test_predict = cifar_test[:10, :, :]
+prediction = net.predict(test_predict)
+print(accuracy_score(cifat_test_label[:10], prediction))

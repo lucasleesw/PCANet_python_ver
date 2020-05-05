@@ -4,11 +4,13 @@ from scipy import signal
 import gc
 import copy
 from sklearn import svm
+from sklearn.decomposition import PCA
 
 # from guppy import hpy; h=hpy()
 
+
 class PCANet:
-    def __init__(self, k1, k2, L1, L2, block_size, overlapping_radio=0, linear_classifier='svm'):
+    def __init__(self, k1, k2, L1, L2, block_size, overlapping_radio=0, linear_classifier='svm', spp_parm=None, dim_reduction=None):
         # some parameter
         self.k1 = k1
         self.k2 = k2
@@ -22,6 +24,11 @@ class PCANet:
             self.classifier = svm.SVC()
         else:
             self.classifier = None
+        self.spp_parm = spp_parm
+        if dim_reduction:
+            self.dim_reduction = dim_reduction
+        else:
+            self.dim_reduction = None
 
     def mean_remove_img_patches(self, img, width, height):
         in_img = copy.deepcopy(img)
@@ -50,9 +57,9 @@ class PCANet:
 
         for n in range(img_num):
             if rgb:
-                # for i in range(num_chn):
+
                 im = np.array([self.mean_remove_img_patches(train_data[n][:, :, i], img_patch_width, img_patch_height) for i in range(num_chn)]).reshape((num_chn * patch_width * patch_height, -1))
-                # print(im.shape)
+
                 cap_c += np.matmul(im, im.T)
             else:
                 im = self.mean_remove_img_patches(train_data[n], img_patch_width, img_patch_height)
@@ -61,19 +68,15 @@ class PCANet:
                 print(n, 'th picture')
                 gc.collect()
         # print(h.heap())
-
         vals, vecs = np.linalg.eig(cap_c / img_num * im.shape[1])
 
         idx_w_l1 = np.argsort(np.real(vals))[:-(num_filter + 1):-1]
-
         cap_w_l1 = np.real(vecs[:, idx_w_l1])
         # print(vecs)
         if rgb:
             filters = cap_w_l1.T.reshape(num_filter, patch_width, patch_height, num_chn)
-
         else:
             filters = cap_w_l1.T.reshape(num_filter, patch_width, patch_height)
-
         return filters
 
     def get_historgram(self, decimal_result):
@@ -89,7 +92,6 @@ class PCANet:
                 for j in range(0, img_patch_height, step_size):
                     patten = decimal_result[i: i + self.block_size, j:j + self.block_size]
                     histogram, _ = np.histogram(patten, histo_bins)
-
 
     def extract_features(self, img, rgb=False):
         if rgb:
@@ -121,16 +123,51 @@ class PCANet:
         step_size = int(self.block_size * (1 - self.overlapping_radio))
         img_patch_height = img_height - self.block_size + 1
         img_patch_width = img_width - self.block_size + 1
+        # print(decimal_result.shape)
 
-        feature = []
+        if self.spp_parm:
+            feature_width = len(range(0, img_patch_width, step_size))
+            feature_height = len(range(0, img_patch_height, step_size))
+            feature = []
+            for l in range(self.L1):
+                before_spp = np.empty((feature_width, feature_height, len(histo_bins)-1))
+                spp_idx_i = 0
+                for i in range(0, img_patch_width, step_size):
+                    spp_idx_j = 0
+                    for j in range(0, img_patch_height, step_size):
+                        patten = decimal_result[l, i: i + self.block_size, j:j + self.block_size]
+                        histogram, _ = np.histogram(patten, histo_bins)
+                        before_spp[spp_idx_i, spp_idx_j, :] = histogram
+                        spp_idx_j += 1
+                    spp_idx_i += 1
+                after_spp = []
+                for side in self.spp_parm:
+                    W = feature_width // side
+                    H = feature_height // side
+                    for side_i in range(side):
+                        for side_j in range(side):
+                            after_spp.append(before_spp[side_i*W:(side_i+1)*W, side_j*H:(side_j+1)*H:, :].max(axis=(0, 1)))
+                feature.append(after_spp)
 
-        for l in range(self.L1):
-            for i in range(0, img_patch_width, step_size):
-                for j in range(0, img_patch_height, step_size):
-                    patten = decimal_result[l, i: i + self.block_size, j:j + self.block_size]
-                    histogram, _ = np.histogram(patten, histo_bins)
-                    feature.append(histogram)
-        return np.array(feature).reshape((-1))
+            if self.dim_reduction:
+                feature = np.array(feature).swapaxes(0, 1)
+                dim_reduction_to = self.dim_reduction // feature.shape[1]
+                after_pca = []
+                for i in range(feature.shape[0]):
+                    pca = PCA(n_components=dim_reduction_to, copy=False)
+                    after_pca.append(pca.fit_transform(feature[i]))
+                return np.array(after_pca).reshape((-1))
+            else:
+                return np.array(feature).reshape((-1))
+        else:
+            feature = []
+            for l in range(self.L1):
+                for i in range(0, img_patch_width, step_size):
+                    for j in range(0, img_patch_height, step_size):
+                        patten = decimal_result[l, i: i + self.block_size, j:j + self.block_size]
+                        histogram, _ = np.histogram(patten, histo_bins)
+                        feature.append(histogram)
+            return np.array(feature).reshape((-1))
 
     def fit(self, train_data, train_labels):
         if len(train_data.shape) == 4:
@@ -172,7 +209,7 @@ class PCANet:
         print('=' * 20)
         features = []
         for i in range(len(train_data)):
-            if i % 5000 == 0:
+            if i % 1000 == 0:
                 print('extracting', i, 'th feature')
                 gc.collect()
                 # print(h.heap())
@@ -181,7 +218,7 @@ class PCANet:
         # print(h.heap())
         print('length of feature:', len(features[0]))
         print('='*20)
-        print('features extracted, SVM begins')
+        print('features extracted, SVM training')
         self.classifier.fit(features, train_labels)
         # print(self.classifier.get_params())
 
@@ -197,4 +234,5 @@ class PCANet:
                 print('predicting', i, 'th label')
             test_features.append(self.extract_features(test_data[i], rgb))
         predictions = self.classifier.predict(test_features)
+        print('=' * 20)
         return predictions

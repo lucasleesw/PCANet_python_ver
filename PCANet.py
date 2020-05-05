@@ -36,27 +36,43 @@ class PCANet:
         cap_x_i -= np.mean(cap_x_i, axis=0)
         return cap_x_i
 
-    def get_filter(self, train_data, num_filter):
-
+    def get_filter(self, train_data, num_filter, rgb=False):
+        if rgb: num_chn = train_data.shape[3]
         img_num, img_width, img_height = train_data.shape[0], train_data.shape[1], train_data.shape[2]
         patch_width = self.k1
         patch_height = self.k2
         img_patch_height = img_height - patch_height + 1
         img_patch_width = img_width - patch_width + 1
-        cap_c = np.zeros((patch_width * patch_height, patch_width * patch_height))
+        if rgb:
+            cap_c = np.zeros((num_chn * patch_width * patch_height, num_chn * patch_width * patch_height))
+        else:
+            cap_c = np.zeros((patch_width * patch_height, patch_width * patch_height))
 
         for n in range(img_num):
-            im = self.mean_remove_img_patches(train_data[n], img_patch_width, img_patch_height)
-            cap_c += np.matmul(im, im.T)
-
+            if rgb:
+                # for i in range(num_chn):
+                im = np.array([self.mean_remove_img_patches(train_data[n][:, :, i], img_patch_width, img_patch_height) for i in range(num_chn)]).reshape((num_chn * patch_width * patch_height, -1))
+                # print(im.shape)
+                cap_c += np.matmul(im, im.T)
+            else:
+                im = self.mean_remove_img_patches(train_data[n], img_patch_width, img_patch_height)
+                cap_c += np.matmul(im, im.T)
             if n % 10000 == 0:
                 print(n, 'th picture')
                 gc.collect()
         # print(h.heap())
+
         vals, vecs = np.linalg.eig(cap_c / img_num * im.shape[1])
-        idx_w_l1 = np.argsort(vals)[:-(num_filter + 1):-1]
-        cap_w_l1 = vecs[:, idx_w_l1]
-        filters = cap_w_l1.T.reshape(num_filter, patch_width, patch_height)
+
+        idx_w_l1 = np.argsort(np.real(vals))[:-(num_filter + 1):-1]
+
+        cap_w_l1 = np.real(vecs[:, idx_w_l1])
+        # print(vecs)
+        if rgb:
+            filters = cap_w_l1.T.reshape(num_filter, patch_width, patch_height, num_chn)
+
+        else:
+            filters = cap_w_l1.T.reshape(num_filter, patch_width, patch_height)
 
         return filters
 
@@ -75,15 +91,27 @@ class PCANet:
                     histogram, _ = np.histogram(patten, histo_bins)
 
 
-    def extract_features(self, img):
-        conv_result = np.empty((self.L1, self.L2, img.shape[0], img.shape[1]))
-        for i in range(len(self.l1_filters)):
-            l1_result = signal.convolve2d(img, self.l1_filters[i], 'same')
-            for j in range(len(self.l2_filters)):
-                conv_result[i, j, :, :] = signal.convolve2d(l1_result, self.l2_filters[j], 'same')
+    def extract_features(self, img, rgb=False):
+        if rgb:
+            conv_result = np.empty((self.L1, self.L2, img.shape[0], img.shape[1]))
+
+            for i in range(len(self.l1_filters)):
+                l1_result = np.empty(img.shape)
+                for ch in range(img.shape[2]):
+                    l1_result[:, :, ch] = signal.convolve2d(img[:, :, ch], self.l1_filters[i, :, :, ch], 'same')
+                l1_result = np.sum(l1_result, axis=-1)
+                for j in range(len(self.l2_filters)):
+                    conv_result[i, j, :, :] = signal.convolve2d(l1_result, self.l2_filters[j], 'same')
+        else:
+            conv_result = np.empty((self.L1, self.L2, img.shape[0], img.shape[1]))
+            for i in range(len(self.l1_filters)):
+                l1_result = signal.convolve2d(img, self.l1_filters[i], 'same')
+                for j in range(len(self.l2_filters)):
+                    conv_result[i, j, :, :] = signal.convolve2d(l1_result, self.l2_filters[j], 'same')
         # print(conv_result.shape)
         binary_result = np.where(conv_result > 0, 1, 0)
         # print(binary_result.shape)
+
         decimal_result = np.zeros((self.L1, img.shape[0], img.shape[1]))
         for i in range(len(self.l2_filters)):
             decimal_result += (2 ** i) * binary_result[:, i, :, :]
@@ -100,23 +128,38 @@ class PCANet:
             for i in range(0, img_patch_width, step_size):
                 for j in range(0, img_patch_height, step_size):
                     patten = decimal_result[l, i: i + self.block_size, j:j + self.block_size]
-                    # print(patten.shape)
                     histogram, _ = np.histogram(patten, histo_bins)
                     feature.append(histogram)
         return np.array(feature).reshape((-1))
 
     def fit(self, train_data, train_labels):
-        self.l1_filters = self.get_filter(train_data, self.L1)
+        if len(train_data.shape) == 4:
+            rgb = True
+            num_chr = train_data.shape[3]
+        else:
+            rgb = False
+
+        self.l1_filters = self.get_filter(train_data, self.L1, rgb)
         print(self.l1_filters.shape)
         # print(train_data.shape)
-        l1_conv_result = np.empty(
-            (train_data.shape[0] * self.l1_filters.shape[0], train_data.shape[1], train_data.shape[2]))
+        if rgb:
+            l1_conv_result = np.empty(
+                (train_data.shape[0] * self.l1_filters.shape[0], train_data.shape[1], train_data.shape[2], train_data.shape[3]))
+        else:
+            l1_conv_result = np.empty(
+                (train_data.shape[0] * self.l1_filters.shape[0], train_data.shape[1], train_data.shape[2]))
         l1_conv_idx = 0
         # print(h.heap())
         for image in train_data:
             for kernel in self.l1_filters:
-                l1_conv_result[l1_conv_idx, :, :] = signal.convolve2d(image, kernel, 'same')
+                if rgb:
+                    for chn in range(num_chr):
+                        l1_conv_result[l1_conv_idx, :, :, chn] = signal.convolve2d(image[:, :, chn], kernel[:, :, chn], 'same')
+                else:
+                    l1_conv_result[l1_conv_idx, :, :] = signal.convolve2d(image, kernel, 'same')
                 l1_conv_idx += 1
+        if rgb:
+            l1_conv_result = np.sum(l1_conv_result, axis=-1)
         print(l1_conv_result.shape)
         self.l2_filters = self.get_filter(l1_conv_result, self.L2)
         print(self.l2_filters.shape)
@@ -127,11 +170,10 @@ class PCANet:
                 print(i, 'th feature')
                 gc.collect()
                 # print(h.heap())
-            feature = self.extract_features(train_data[i])
+            feature = self.extract_features(train_data[i], rgb)
             features.append(feature)
         # print(h.heap())
         # print(len(features))
-        # print(features[1].shape)
         print('features extracted, SVM begins')
         self.classifier.fit(features, train_labels)
         # print(self.classifier.get_params())
@@ -139,7 +181,8 @@ class PCANet:
     def predict(self, test_data):
         test_features = []
         for i in range(len(test_data)):
-            print('predicting', i, 'th label')
+            if i % 500 == 0:
+                print('predicting', i, 'th label')
             test_features.append(self.extract_features(test_data[i]))
         predictions = self.classifier.predict(test_features)
         return predictions

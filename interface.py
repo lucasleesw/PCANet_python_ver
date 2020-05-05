@@ -14,7 +14,6 @@ from sklearn.metrics import accuracy_score
 # prediction = net.predict(test_predict)
 # print(accuracy_score(test_labels[:10], prediction))
 
-
 cifar_train, cifar_train_labels, cifar_test, cifat_test_label = load_CIFAR10('data/cifar-10-batches-py')
 test_train = (cifar_train[:10, :, :, :], cifar_train_labels[:10])
 print(test_train[0].shape, test_train[1].shape)

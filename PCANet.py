@@ -72,7 +72,7 @@ class PCANet:
 
         idx_w_l1 = np.argsort(np.real(vals))[:-(num_filter + 1):-1]
         cap_w_l1 = np.real(vecs[:, idx_w_l1])
-        # print(vecs)
+
         if rgb:
             filters = cap_w_l1.T.reshape(num_filter, patch_width, patch_height, num_chn)
         else:

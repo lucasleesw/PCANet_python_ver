@@ -79,8 +79,14 @@ https://arxiv.org/abs/1404.3606
 
 #### Trained models
 
-drive link:[link to saved models](https://drive.google.com/drive/folders/1BQeMUbXT-R8VnuQD_OAk1-4tz_MnG8g7?usp=sharing)
+Google Drive link: [link to saved models](https://drive.google.com/open?id=1eiJ-Y1IsXHqPg32K8DfYvPIl7Dc5ZRmS)
+                    The models are named with its training set, which means that each model is trained by the related data set. So, you will select the proper model depending on what testing data set you want to use.
 
-usage:
+Usage: Use `model = torch.load(PATH_to_the_modee)` to load the model you need, then perform this:
 
+```python
+model.fit(train_images, train_labels)
+prediction = net.predict(test_images)
+```
+to get the predicted results.
 

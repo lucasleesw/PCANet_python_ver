@@ -4,7 +4,7 @@ SBU CSE512 Project
 A simple implementation of PCANet: A Simple Deep Learning Baseline for Image Classification?
 https://arxiv.org/abs/1404.3606
 
-File list:
+#### File list:
 
 -   PCANet.py:
 
@@ -74,5 +74,13 @@ File list:
 -   VGG11_experiment_on_CIFAR10.ipynb
 
     For comparison, a notebook for training a simple VGG11 on CIFAR10.
- 
+
+
+
+#### Trained models
+
+drive link:
+
+usage:
+
 

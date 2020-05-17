@@ -62,17 +62,17 @@ File list:
     `train_images, train_labels, test_images, test_labels = load_mnist('path/to/mnist’)`
 
     `train_images, train_labels, test_images, test_labels = load_CIFAR10('path/to/CIFAR10’)`
+    
+-   PCANet_experiment_on_MNIST.ipynb
 
--   colab_vgg_CIFAR10.ipynb
+    A notebook shows the experiment results on MNIST.
 
-    To comparison, a notebook for training a simple VGG11 on CIFAR10.
+-   PCANet_experiment_on_CIFAR10.ipynb
 
--   todo experiment file
+    A notebook shows the experiment results on CIFAR10.
 
-    todotodotodo
+-   VGG11_experiment_on_CIFAR10.ipynb
 
-
-Pre-trained modes:
-
-# todo
+    For comparison, a notebook for training a simple VGG11 on CIFAR10.
+ 
 

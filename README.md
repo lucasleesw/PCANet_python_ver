@@ -13,9 +13,9 @@ Usage of PCANet:
   1. Load data into numpy ndarray(check data_loader.py and data_loader2.py as example)
   2. Initialize PCANet class, e.g.:
 
-  `net = PCANet(k1=7, k2=7, L1=8, L2=8, block_size=7)`
+  `net = PCANet(k1=7, k2=7, L1=8, L2=8, block_size=7, *other_parameters)`
 
-  Other paramaters:
+  Other parameters:
   ```python
   overlapping_radio=0 
   # overlapping radio, 1-0, optional, default 0

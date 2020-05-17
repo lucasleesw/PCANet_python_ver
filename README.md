@@ -26,13 +26,13 @@ Usage of PCANet:
   L2
   # the number of filters in the Second stage, required
   block_size
-# the block size of histogram, required
+  # the block size of histogram, required
   overlapping_radio=0 
-# overlapping radio, 1-0, optional, default 0
+  # overlapping radio, 1-0, optional, default 0
   linear_classifier='svm' 
-# linear_classifier, a linear_classifer or 'svm', 'svm' means sklearn.svm.SVC(), optional, default 'svm'
+  # linear_classifier, a linear_classifer or 'svm', 'svm' means sklearn.svm.SVC(), optional, default 'svm'
   spp_parm=None
-# parameters for spp, needs to be a list, eg[4,2,1], optional, default none
+  # parameters for spp, needs to be a list, eg[4,2,1], optional, default none
   dim_reduction=None
   # dim reduction after spp, the number of dimension reduce to, optional, default none
   ```

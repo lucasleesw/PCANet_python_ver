@@ -15,24 +15,34 @@ Usage of PCANet:
 
   `net = PCANet(k1=7, k2=7, L1=8, L2=8, block_size=7, *other_parameters)`
 
-  Other parameters:
+  Parameters:
   ```python
+  k1
+  # the mean remove patch size width, required
+  k2
+  # the mean remove patch size height, required
+  L1
+  # the number of filters in the First stage, required
+  L2
+  # the number of filters in the Second stage, required
+  block_size
+# the block size of histogram, required
   overlapping_radio=0 
-  # overlapping radio, 1-0, optional, default 0
+# overlapping radio, 1-0, optional, default 0
   linear_classifier='svm' 
-  # linear_classifier, a linear_classifer or 'svm', 'svm' means sklearn.svm.SVC(), optional, default 'svm'
+# linear_classifier, a linear_classifer or 'svm', 'svm' means sklearn.svm.SVC(), optional, default 'svm'
   spp_parm=None
-  # parameters for spp, needs to be a list, eg[4,2,1], optional, default none
+# parameters for spp, needs to be a list, eg[4,2,1], optional, default none
   dim_reduction=None
   # dim reduction after spp, the number of dimension reduce to, optional, default none
   ```
-
+  
   3.  Train PCANet with train data, e.g.:
-
+  
   `net.fit(train_data)`
-
+  
   4.  Predict test data's label with trained PCANet, e.g.:
-
+  
   `prediction = net.predict(test_data)`
 
 

@@ -47,7 +47,8 @@ Usage of PCANet:
 
 
 
-Usage of dataloader:
 
-#todo
+Pre-trained modes:
+
+# todo
 

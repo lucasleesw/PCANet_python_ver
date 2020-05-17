@@ -57,7 +57,7 @@ File list:
 
     Simple data loader for MNIST and CIFAR10
 
-    Usage:
+    Sample usage:
 
     `train_images, train_labels, test_images, test_labels = load_mnist('path/to/mnist’)`
 

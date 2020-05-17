@@ -63,17 +63,19 @@ https://arxiv.org/abs/1404.3606
 
     `train_images, train_labels, test_images, test_labels = load_CIFAR10('path/to/CIFAR10’)`
     
--   PCANet_experiment_on_MNIST.ipynb
+-   Experiment Notebooks:
 
-    A notebook shows the experiment results on MNIST.
+    -   PCANet_experiment_on_MNIST.ipynb
 
--   PCANet_experiment_on_CIFAR10.ipynb
+        A notebook shows the experiment results on MNIST.
 
-    A notebook shows the experiment results on CIFAR10.
+    -   PCANet_experiment_on_CIFAR10.ipynb
 
--   VGG11_experiment_on_CIFAR10.ipynb
+        A notebook shows the experiment results on CIFAR10.
 
-    For comparison, a notebook for training a simple VGG11 on CIFAR10.
+    -   VGG11_experiment_on_CIFAR10.ipynb
+
+        For comparison, a notebook for training a simple VGG11 on CIFAR10.
 
 
 

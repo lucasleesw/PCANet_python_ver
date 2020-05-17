@@ -84,9 +84,8 @@ Google Drive link: [link to saved models](https://drive.google.com/open?id=1eiJ-
 
 Usage: Use `model = torch.load(PATH_to_the_model)` to load the model you need, then perform this:
 
-```python
-model.fit(train_images, train_labels)
-prediction = net.predict(test_images)
+```python、
+prediction = model.predict(test_images)
 ```
 to get the predicted results.
 

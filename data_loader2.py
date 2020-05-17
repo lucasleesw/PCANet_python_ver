@@ -23,7 +23,6 @@ def load_mnist(root):
     with open(labels_path, 'rb') as lbpath:
         magic, n = struct.unpack('>II', lbpath.read(8))
         labels = np.fromfile(lbpath, dtype=np.uint8)
-    # 读入magic是一个文件协议的描述,也是调用fromfile 方法将字节读入NumPy的array之前在文件缓冲中的item数(n).
 
     with open(images_path, 'rb') as imgpath:
         magic, num, rows, cols = struct.unpack('>IIII', imgpath.read(16))
@@ -32,7 +31,6 @@ def load_mnist(root):
     with open(test_label_path, 'rb') as tlbpath:
         magic, n = struct.unpack('>II', tlbpath.read(8))
         tlabels = np.fromfile(tlbpath, dtype=np.uint8)
-    # 读入magic是一个文件协议的描述,也是调用fromfile 方法将字节读入NumPy的array之前在文件缓冲中的item数(n).
 
     with open(test_images_path, 'rb') as timgpath:
         magic, num, rows, cols = struct.unpack('>IIII', timgpath.read(16))

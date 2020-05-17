@@ -1,7 +1,7 @@
 # Entrance of program
 
 from PCANet import *
-from data_loader import *
+from data_loader2 import *
 import sys
 from sklearn.metrics import accuracy_score
 from sklearn import svm
